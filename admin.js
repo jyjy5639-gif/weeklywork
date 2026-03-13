@@ -5,7 +5,6 @@
 const DEFAULTS = {
   depts:      ['투자1부', '투자2부', '투자3부', '관리부'],
   categories: ['작성중', '신규', '기존', '기존★', '관리자산', '입/출금', '기타'],
-  worktypes:  ['투', '자', '업', '무', '부'],
   statuses:   ['작성중', '검토중', '심사중', '투자완료', '협의중', '보류', '종결', '-']
 };
 
@@ -13,7 +12,6 @@ const DEFAULTS = {
 let _opts = {
   depts:      [...DEFAULTS.depts],
   categories: [...DEFAULTS.categories],
-  worktypes:  [...DEFAULTS.worktypes],
   statuses:   [...DEFAULTS.statuses]
 };
 

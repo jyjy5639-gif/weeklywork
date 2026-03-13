@@ -9,13 +9,12 @@ let _allEntries    = [];
 const DEFAULTS = {
   depts:      ['투자1부', '투자2부', '투자3부', '관리부'],
   categories: ['작성중', '신규', '기존', '기존★', '관리자산', '입/출금', '기타'],
-  worktypes:  ['투', '자', '업', '무', '부'],
   statuses:   ['작성중', '검토중', '심사중', '투자완료', '협의중', '보류', '종결', '-']
 };
 let _opts = { ...DEFAULTS };
 
 const FIELDS = [
-  'f_dept','f_category','f_worktype','f_date','f_week_start','f_week_type',
+  'f_dept','f_category','f_date','f_week_start','f_week_type',
   'f_company','f_industry','f_invest_type','f_target','f_total_size',
   'f_review_amount','f_status','f_note',
   'f_pre_value','f_equity_ratio','f_coupon','f_irr','f_moic',
@@ -91,7 +90,6 @@ function populateSelect(id, items, placeholder) {
 function populateAllDropdowns() {
   populateSelect('f_dept',     _opts.depts,      '부서 선택');
   populateSelect('f_category', _opts.categories, '구분 선택');
-  populateSelect('f_worktype', _opts.worktypes,  '선택');
   populateSelect('f_status',   _opts.statuses,   '선택');
 }
 
@@ -133,7 +131,6 @@ async function submitEntry() {
 
   const entry = {
     dept, category,
-    worktype:      getVal('f_worktype'),
     date:          new Date().toISOString().split('T')[0],
     week_start,
     week_type:     calcWeekType(week_start),
@@ -269,7 +266,7 @@ function editEntry(id) {
   if (!e) return;
   _currentEditId = id;
   const map = {
-    f_dept:e.dept, f_category:e.category, f_worktype:e.worktype,
+    f_dept:e.dept, f_category:e.category,
     f_company:e.company, f_industry:e.industry, f_invest_type:e.invest_type,
     f_target:e.target, f_total_size:e.total_size, f_review_amount:e.review_amount,
     f_status:e.status, f_note:e.note,
