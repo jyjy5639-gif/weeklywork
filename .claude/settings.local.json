@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mv Db.js _t.js)",
+      "Bash(mv _t.js db.js)",
+      "Bash(mv Dashboard.js _t.js)",
+      "Bash(mv _t.js dashboard.js)",
+      "Bash(mv Input.js _t.js)",
+      "Bash(mv _t.js input.js)",
+      "Bash(mv Style.css _t.css)",
+      "Bash(mv _t.css style.css)",
+      "Bash(mv Input.html _t.html)",
+      "Bash(mv _t.html input.html)"
+    ]
+  }
+}
