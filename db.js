@@ -5,10 +5,11 @@
 
 import {
   collection, getDocs, addDoc, updateDoc, deleteDoc,
-  doc, query, where, orderBy, onSnapshot, serverTimestamp
+  doc, getDoc, setDoc, query, where, orderBy, onSnapshot, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-const COLL = "weekly_entries";
+const COLL     = "weekly_entries";
+const SETTINGS = "settings";
 
 function getDB() {
   if (!window._db) throw new Error("Firebase not initialized");
@@ -24,7 +25,6 @@ const DB = {
     return onSnapshot(q, snap => {
       const entries = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       callback(entries);
-      // DB 상태 표시
       document.querySelectorAll('.db-status').forEach(el => {
         el.textContent = `● Firebase 연결됨 (${entries.length}건)`;
         el.className = 'db-status ok';
@@ -73,6 +73,19 @@ const DB = {
     const q = query(collection(db, COLL), orderBy("created_at", "desc"));
     const snap = await getDocs(q);
     return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  },
+
+  // ── 설정 조회 ─────────────────────────────────────
+  async getSettings() {
+    const db = getDB();
+    const snap = await getDoc(doc(db, SETTINGS, "dropdowns"));
+    return snap.exists() ? snap.data() : null;
+  },
+
+  // ── 설정 저장 ─────────────────────────────────────
+  async saveSettings(data) {
+    const db = getDB();
+    await setDoc(doc(db, SETTINGS, "dropdowns"), data);
   }
 };
 

@@ -5,6 +5,15 @@
 let _currentEditId = null;
 let _allEntries    = [];
 
+// 드롭다운 기본값 (Firebase 설정이 없을 때)
+const DEFAULTS = {
+  depts:      ['투자1부', '투자2부', '투자3부', '관리부'],
+  categories: ['작성중', '신규', '기존', '기존★', '관리자산', '입/출금', '기타'],
+  worktypes:  ['투', '자', '업', '무', '부'],
+  statuses:   ['작성중', '검토중', '심사중', '투자완료', '협의중', '보류', '종결', '-']
+};
+let _opts = { ...DEFAULTS };
+
 const FIELDS = [
   'f_dept','f_category','f_worktype','f_date','f_week_start','f_week_type',
   'f_company','f_industry','f_invest_type','f_target','f_total_size',
@@ -16,27 +25,50 @@ const FIELDS = [
 function getVal(id) { return document.getElementById(id)?.value?.trim() || ''; }
 function setVal(id, v) { const el = document.getElementById(id); if (el) el.value = v || ''; }
 
-// ── 주간 시작일 기준 금주/전주 자동 판별 ─────────────────────
+// ── 주차 유틸 ────────────────────────────────────────────────
 function getMondayStr(d) {
   const day = d.getDay(), diff = d.getDate() - day + (day === 0 ? -6 : 1);
   const m = new Date(d); m.setDate(diff);
   return m.toISOString().split('T')[0];
 }
 
-function calcWeekType(weekStart) {
-  if (!weekStart) return '';
-  const currentMonday = getMondayStr(new Date());
-  return weekStart >= currentMonday ? 'current' : 'prev';
+function shiftWeeks(dateStr, n) {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + n * 7);
+  return d.toISOString().split('T')[0];
 }
 
+function calcWeekType(weekStart) {
+  if (!weekStart) return '';
+  return weekStart >= getMondayStr(new Date()) ? 'current' : 'prev';
+}
+
+// ── 주차 선택 드롭다운 생성 ──────────────────────────────────
+function generateWeekOptions(selectedVal) {
+  const sel = document.getElementById('f_week_start');
+  if (!sel) return;
+  const current = getMondayStr(new Date());
+  const target  = selectedVal || current;
+  const opts = [];
+  for (let i = -8; i <= 4; i++) {
+    const mon = shiftWeeks(current, i);
+    const monD = new Date(mon);
+    const friD = new Date(mon); friD.setDate(monD.getDate() + 4);
+    const fmt  = d => `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+    const label = `${fmt(monD)} ~ ${fmt(friD)}`;
+    opts.push(`<option value="${mon}" ${mon === target ? 'selected' : ''}>${label}</option>`);
+  }
+  sel.innerHTML = opts.join('');
+}
+
+// ── 금주/전주 배지 업데이트 ──────────────────────────────────
 function updateWeekTypeBadge() {
   const weekStart = getVal('f_week_start');
   const badge = document.getElementById('weekTypeBadge');
   if (!badge) return;
-
   const type = calcWeekType(weekStart);
   if (!weekStart) {
-    badge.textContent = '주간 시작일을 선택하세요';
+    badge.textContent = '주차를 선택하세요';
     badge.className = 'week-type-badge empty';
   } else if (type === 'current') {
     badge.textContent = '● 금주 실적으로 저장됩니다';
@@ -47,13 +79,38 @@ function updateWeekTypeBadge() {
   }
 }
 
+// ── 드롭다운 옵션 동적 채우기 ────────────────────────────────
+function populateSelect(id, items, placeholder) {
+  const sel = document.getElementById(id);
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = `<option value="">${placeholder || '선택'}</option>` +
+    items.map(v => `<option value="${v}" ${v === cur ? 'selected' : ''}>${v}</option>`).join('');
+}
+
+function populateAllDropdowns() {
+  populateSelect('f_dept',     _opts.depts,      '부서 선택');
+  populateSelect('f_category', _opts.categories, '구분 선택');
+  populateSelect('f_worktype', _opts.worktypes,  '선택');
+  populateSelect('f_status',   _opts.statuses,   '선택');
+}
+
+async function loadDropdownOptions() {
+  if (!window.DB) return;
+  try {
+    const s = await DB.getSettings();
+    if (s) _opts = { ...DEFAULTS, ...s };
+  } catch(e) { console.warn('설정 로드 실패, 기본값 사용:', e); }
+  populateAllDropdowns();
+}
+
+// ── 폼 초기화 ────────────────────────────────────────────────
 function resetForm() {
   FIELDS.forEach(id => setVal(id, ''));
-  const today = new Date().toISOString().split('T')[0];
-  setVal('f_date', today);
-  setVal('f_week_start', getMondayStr(new Date()));
+  generateWeekOptions();
   setVal('f_status', '검토중');
   updateWeekTypeBadge();
+  populateAllDropdowns();
   document.getElementById('formMsg').textContent = '';
   document.getElementById('formMsg').className = 'form-msg';
   document.getElementById('btnSubmit').textContent = '저장';
@@ -61,7 +118,7 @@ function resetForm() {
   _currentEditId = null;
 }
 
-// ── 저장 ─────────────────────────────────────────────────
+// ── 저장 ─────────────────────────────────────────────────────
 async function submitEntry() {
   if (!window.DB) { showMsg('Firebase가 연결되지 않았습니다.', 'error'); return; }
 
@@ -71,17 +128,15 @@ async function submitEntry() {
   const week_start = getVal('f_week_start');
 
   if (!dept || !category || !company || !week_start) {
-    showMsg('필수 항목(부서, 구분, 회사명, 주간 시작일)을 입력해 주세요.', 'error'); return;
+    showMsg('필수 항목(부서, 구분, 회사명, 주차)을 입력해 주세요.', 'error'); return;
   }
-
-  const week_type = calcWeekType(week_start);
 
   const entry = {
     dept, category,
     worktype:      getVal('f_worktype'),
     date:          new Date().toISOString().split('T')[0],
     week_start,
-    week_type,
+    week_type:     calcWeekType(week_start),
     company,
     industry:      getVal('f_industry'),
     invest_type:   getVal('f_invest_type'),
@@ -131,7 +186,7 @@ function showMsg(msg, cls) {
   setTimeout(() => { el.textContent=''; el.className='form-msg'; }, 4000);
 }
 
-// ── 목록 로드 ─────────────────────────────────────────────
+// ── 목록 로드 ─────────────────────────────────────────────────
 async function loadList() {
   if (!window.DB) return;
   _allEntries = await DB.getAll();
@@ -144,7 +199,12 @@ function updateWeekFilter() {
   const sel = document.getElementById('filterWeek');
   const cur = sel.value;
   sel.innerHTML = '<option value="">전체 주차</option>' +
-    weeks.map(w=>`<option value="${w}" ${cur===w?'selected':''}>${w} 주</option>`).join('');
+    weeks.map(w => {
+      const monD = new Date(w);
+      const friD = new Date(w); friD.setDate(monD.getDate() + 4);
+      const fmt  = d => `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+      return `<option value="${w}" ${cur===w?'selected':''}>${fmt(monD)} ~ ${fmt(friD)}</option>`;
+    }).join('');
 }
 
 function renderList() {
@@ -171,6 +231,13 @@ function renderList() {
     '관리자산':'tag-관리자산','입/출금':'tag-입출금','기타':'tag-기타'
   };
 
+  const fmtWeek = w => {
+    if (!w) return '—';
+    const m = new Date(w); const f = new Date(w); f.setDate(m.getDate()+4);
+    const fmt = d => `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+    return `${fmt(m)}~${fmt(f)}`;
+  };
+
   container.innerHTML = entries.map(e => `
     <div class="entry-card">
       <div class="entry-card-header">
@@ -186,7 +253,7 @@ function renderList() {
         <span>·</span>
         <span class="tag ${catCls[e.category]||'tag-기타'}" style="font-size:10px;padding:1px 6px">${e.category||'—'}</span>
         <span>·</span>
-        <span style="font-family:'DM Mono',monospace;font-size:10px">${e.week_start||'—'}</span>
+        <span style="font-family:'DM Mono',monospace;font-size:10px">${fmtWeek(e.week_start)}</span>
         <span>·</span>
         <span style="color:${e.week_type==='current'?'var(--cur-lt)':'var(--prv-lt)'}">${e.week_type==='current'?'금주':'전주'}</span>
         <span>·</span>
@@ -203,7 +270,6 @@ function editEntry(id) {
   _currentEditId = id;
   const map = {
     f_dept:e.dept, f_category:e.category, f_worktype:e.worktype,
-    f_date:e.date, f_week_start:e.week_start, f_week_type:e.week_type,
     f_company:e.company, f_industry:e.industry, f_invest_type:e.invest_type,
     f_target:e.target, f_total_size:e.total_size, f_review_amount:e.review_amount,
     f_status:e.status, f_note:e.note,
@@ -211,6 +277,8 @@ function editEntry(id) {
     f_irr:e.irr, f_moic:e.moic, f_exit_method:e.exit_method,
     f_exit_year:e.exit_year, f_put_call:e.put_call, f_tag_drag:e.tag_drag
   };
+  // 주차 선택 드롭다운 해당 주차로 재생성
+  generateWeekOptions(e.week_start);
   Object.entries(map).forEach(([k,v])=>setVal(k,v));
   updateWeekTypeBadge();
   document.getElementById('btnSubmit').textContent = '수정 저장';
@@ -226,15 +294,22 @@ async function deleteEntry(id) {
   } catch(e) { alert('삭제 실패: ' + e.message); }
 }
 
-// ── 초기화 ─────────────────────────────────────────────
+// ── 초기화 ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  setVal('f_date', new Date().toISOString().split('T')[0]);
-  setVal('f_week_start', getMondayStr(new Date()));
-  setVal('f_status', '검토중');
+  generateWeekOptions();
   updateWeekTypeBadge();
+  setVal('f_status', '검토중');
 
-  const tryLoad = () => { if (window.DB) loadList(); else setTimeout(tryLoad, 200); };
+  const tryLoad = () => {
+    if (window.DB) {
+      loadDropdownOptions().then(() => loadList());
+    } else {
+      setTimeout(tryLoad, 200);
+    }
+  };
   tryLoad();
 });
 
-window.addEventListener('db-ready', loadList);
+window.addEventListener('db-ready', () => {
+  loadDropdownOptions().then(() => loadList());
+});

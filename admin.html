@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>화인파트너스 | 관리자 설정</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  const firebaseConfig = {
+    apiKey: "AIzaSyD5yGKzMemtfwPE6_hQhmEu9Ea_oIL-N68",
+    authDomain: "fineweeklyinvest.firebaseapp.com",
+    projectId: "fineweeklyinvest",
+    storageBucket: "fineweeklyinvest.firebasestorage.app",
+    messagingSenderId: "941229200117",
+    appId: "1:941229200117:web:83028f4a7950428ede6bbc"
+  };
+  const app = initializeApp(firebaseConfig);
+  window._db = getFirestore(app);
+  window._fbReady = true;
+  window.dispatchEvent(new Event('firebase-ready'));
+</script>
+<link rel="stylesheet" href="style.css">
+<style>
+  .admin-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-top: 20px;
+  }
+  .admin-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    animation: fadeUp .3s ease both;
+  }
+  .admin-card-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text1);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .admin-card-desc {
+    font-size: 11px;
+    color: var(--text3);
+    margin-bottom: 12px;
+  }
+  .tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+    min-height: 32px;
+  }
+  .tag-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 30px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    cursor: default;
+  }
+  .tag-item .del-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text3);
+    font-size: 12px;
+    line-height: 1;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    transition: color .15s;
+  }
+  .tag-item .del-btn:hover { color: var(--danger); }
+  .add-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .add-input {
+    flex: 1;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    color: var(--text1);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 12px;
+    padding: 6px 10px;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .add-input:focus { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold-dim); }
+  .add-input::placeholder { color: var(--border3); }
+  .btn-add {
+    padding: 6px 14px;
+    background: var(--gold);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Noto Sans KR', sans-serif;
+    white-space: nowrap;
+    transition: background .2s;
+  }
+  .btn-add:hover { background: var(--gold-lt); }
+  .save-bar {
+    margin-top: 28px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .save-msg { font-size: 12px; min-height: 18px; }
+  .save-msg.success { color: var(--prv-lt); font-weight: 600; }
+  .save-msg.error   { color: var(--danger); font-weight: 600; }
+  .btn-save-all {
+    padding: 9px 28px;
+    background: var(--cur);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Noto Sans KR', sans-serif;
+    transition: background .2s;
+  }
+  .btn-save-all:hover { background: var(--cur-lt); }
+  .btn-save-all:disabled { opacity: .5; cursor: not-allowed; }
+  .dot-gold  { background: var(--gold) }
+  .dot-blue  { background: var(--cur-lt) }
+  .dot-green { background: var(--prv-lt) }
+  .dot-red   { background: var(--star-lt) }
+  @media(max-width:900px){ .admin-grid{ grid-template-columns:1fr } }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="nav-left">
+    <span class="logo-mark">FP</span>
+    <span class="logo-text">화인파트너스</span>
+    <span class="nav-divider">|</span>
+    <span class="nav-subtitle">주간 업무일지 & 계획</span>
+  </div>
+  <div class="nav-right">
+    <a href="index.html" class="nav-btn">대시보드</a>
+    <a href="input.html" class="nav-btn">데이터 입력</a>
+    <a href="admin.html" class="nav-btn active">⚙ 관리자</a>
+    <span class="db-status" id="dbStatus">● 연결 중...</span>
+  </div>
+</nav>
+
+<main class="main-container">
+  <div class="input-header" style="margin-top:6px">
+    <h2 class="input-title">⚙ 관리자 설정</h2>
+    <p class="input-desc">드롭다운 항목을 추가·삭제하고 전체 저장하세요. 저장 즉시 입력 페이지에 반영됩니다.</p>
+  </div>
+
+  <div class="admin-grid">
+
+    <!-- 부서 -->
+    <div class="admin-card">
+      <div class="admin-card-title">
+        <span class="form-section-dot dot-gold"></span> 부서
+      </div>
+      <div class="admin-card-desc">입력 폼의 부서 선택 옵션</div>
+      <div class="tag-list" id="tags-depts"></div>
+      <div class="add-row">
+        <input class="add-input" id="add-depts" placeholder="새 부서명 입력 후 추가" onkeydown="handleAddKey(event,'depts')">
+        <button class="btn-add" onclick="addTag('depts')">+ 추가</button>
+      </div>
+    </div>
+
+    <!-- 구분 -->
+    <div class="admin-card">
+      <div class="admin-card-title">
+        <span class="form-section-dot dot-blue"></span> 구분 (카테고리)
+      </div>
+      <div class="admin-card-desc">입력 폼의 구분 선택 옵션</div>
+      <div class="tag-list" id="tags-categories"></div>
+      <div class="add-row">
+        <input class="add-input" id="add-categories" placeholder="새 구분명 입력 후 추가" onkeydown="handleAddKey(event,'categories')">
+        <button class="btn-add" onclick="addTag('categories')">+ 추가</button>
+      </div>
+    </div>
+
+    <!-- 업무구분 -->
+    <div class="admin-card">
+      <div class="admin-card-title">
+        <span class="form-section-dot dot-green"></span> 업무구분
+      </div>
+      <div class="admin-card-desc">투/자/업/무/부 등 업무 분류 코드</div>
+      <div class="tag-list" id="tags-worktypes"></div>
+      <div class="add-row">
+        <input class="add-input" id="add-worktypes" placeholder="새 코드 입력 후 추가" onkeydown="handleAddKey(event,'worktypes')">
+        <button class="btn-add" onclick="addTag('worktypes')">+ 추가</button>
+      </div>
+    </div>
+
+    <!-- 진행상황 -->
+    <div class="admin-card">
+      <div class="admin-card-title">
+        <span class="form-section-dot dot-red"></span> 진행상황
+      </div>
+      <div class="admin-card-desc">입력 폼의 진행상황 선택 옵션</div>
+      <div class="tag-list" id="tags-statuses"></div>
+      <div class="add-row">
+        <input class="add-input" id="add-statuses" placeholder="새 상태명 입력 후 추가" onkeydown="handleAddKey(event,'statuses')">
+        <button class="btn-add" onclick="addTag('statuses')">+ 추가</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="save-bar">
+    <div id="saveMsg" class="save-msg"></div>
+    <button class="btn-save-all" id="btnSaveAll" onclick="saveAll()">전체 저장</button>
+  </div>
+</main>
+
+<script src="db.js" type="module"></script>
+<script src="admin.js"></script>
+</body>
+</html>
