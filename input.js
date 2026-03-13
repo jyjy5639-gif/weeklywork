@@ -5,7 +5,6 @@
 let _currentEditId = null;
 let _allEntries    = [];
 
-// ── 폼 필드 목록 ────────────────────────────────────────
 const FIELDS = [
   'f_dept','f_category','f_worktype','f_date','f_week_start','f_week_type',
   'f_company','f_industry','f_invest_type','f_target','f_total_size',
@@ -17,25 +16,49 @@ const FIELDS = [
 function getVal(id) { return document.getElementById(id)?.value?.trim() || ''; }
 function setVal(id, v) { const el = document.getElementById(id); if (el) el.value = v || ''; }
 
-function resetForm() {
-  FIELDS.forEach(id => setVal(id, ''));
-  // 기본값 복원
-  const today = new Date().toISOString().split('T')[0];
-  setVal('f_date', today);
-  setVal('f_week_start', getMondayStr(new Date()));
-  setVal('f_week_type', 'current');
-  setVal('f_status', '검토중');
-  document.getElementById('formMsg').textContent = '';
-  document.getElementById('formMsg').className = 'form-msg';
-  document.getElementById('btnSubmit').textContent = '저장하기';
-  document.getElementById('btnSubmit').onclick = submitEntry;
-  _currentEditId = null;
-}
-
+// ── 주간 시작일 기준 금주/전주 자동 판별 ─────────────────────
 function getMondayStr(d) {
   const day = d.getDay(), diff = d.getDate() - day + (day === 0 ? -6 : 1);
   const m = new Date(d); m.setDate(diff);
   return m.toISOString().split('T')[0];
+}
+
+function calcWeekType(weekStart) {
+  if (!weekStart) return '';
+  const currentMonday = getMondayStr(new Date());
+  return weekStart >= currentMonday ? 'current' : 'prev';
+}
+
+function updateWeekTypeBadge() {
+  const weekStart = getVal('f_week_start');
+  const badge = document.getElementById('weekTypeBadge');
+  if (!badge) return;
+
+  const type = calcWeekType(weekStart);
+  if (!weekStart) {
+    badge.textContent = '주간 시작일을 선택하세요';
+    badge.className = 'week-type-badge empty';
+  } else if (type === 'current') {
+    badge.textContent = '● 금주 실적으로 저장됩니다';
+    badge.className = 'week-type-badge current';
+  } else {
+    badge.textContent = '● 전주 실적으로 저장됩니다';
+    badge.className = 'week-type-badge prev';
+  }
+}
+
+function resetForm() {
+  FIELDS.forEach(id => setVal(id, ''));
+  const today = new Date().toISOString().split('T')[0];
+  setVal('f_date', today);
+  setVal('f_week_start', getMondayStr(new Date()));
+  setVal('f_status', '검토중');
+  updateWeekTypeBadge();
+  document.getElementById('formMsg').textContent = '';
+  document.getElementById('formMsg').className = 'form-msg';
+  document.getElementById('btnSubmit').textContent = '저장';
+  document.getElementById('btnSubmit').onclick = submitEntry;
+  _currentEditId = null;
 }
 
 // ── 저장 ─────────────────────────────────────────────────
@@ -48,15 +71,17 @@ async function submitEntry() {
   const week_start = getVal('f_week_start');
 
   if (!dept || !category || !company || !week_start) {
-    showMsg('필수 항목(부서, 구분, 회사명, 주차)을 입력해 주세요.', 'error'); return;
+    showMsg('필수 항목(부서, 구분, 회사명, 주간 시작일)을 입력해 주세요.', 'error'); return;
   }
+
+  const week_type = calcWeekType(week_start);
 
   const entry = {
     dept, category,
     worktype:      getVal('f_worktype'),
-    date:          getVal('f_date'),
+    date:          new Date().toISOString().split('T')[0],
     week_start,
-    week_type:     getVal('f_week_type') || 'current',
+    week_type,
     company,
     industry:      getVal('f_industry'),
     invest_type:   getVal('f_invest_type'),
@@ -65,7 +90,6 @@ async function submitEntry() {
     review_amount: getVal('f_review_amount'),
     status:        getVal('f_status') || '검토중',
     note:          getVal('f_note'),
-    // 재무 상세
     pre_value:     getVal('f_pre_value'),
     equity_ratio:  getVal('f_equity_ratio'),
     coupon:        getVal('f_coupon'),
@@ -85,7 +109,7 @@ async function submitEntry() {
       await DB.update(_currentEditId, entry);
       showMsg('✓ 수정되었습니다.', 'success');
       _currentEditId = null;
-      btn.textContent = '저장하기';
+      btn.textContent = '저장';
       btn.onclick = submitEntry;
     } else {
       await DB.add(entry);
@@ -97,7 +121,7 @@ async function submitEntry() {
     showMsg('저장 실패: ' + e.message, 'error');
   } finally {
     btn.disabled = false;
-    if (!_currentEditId) btn.textContent = '저장하기';
+    if (!_currentEditId) btn.textContent = '저장';
   }
 }
 
@@ -168,12 +192,12 @@ function renderList() {
         <span>·</span>
         <span class="status-badge ${statusCls[e.status]||''}">${e.status||'—'}</span>
         <span>·</span>
-        <span style="color:var(--gold-lt);font-family:'DM Mono',monospace">${e.review_amount||'—'}</span>
+        <span style="color:var(--gold);font-family:'DM Mono',monospace">${e.review_amount||'—'}</span>
       </div>
     </div>`).join('');
 }
 
-async function editEntry(id) {
+function editEntry(id) {
   const e = _allEntries.find(x=>x.id===id);
   if (!e) return;
   _currentEditId = id;
@@ -188,6 +212,7 @@ async function editEntry(id) {
     f_exit_year:e.exit_year, f_put_call:e.put_call, f_tag_drag:e.tag_drag
   };
   Object.entries(map).forEach(([k,v])=>setVal(k,v));
+  updateWeekTypeBadge();
   document.getElementById('btnSubmit').textContent = '수정 저장';
   window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -203,13 +228,11 @@ async function deleteEntry(id) {
 
 // ── 초기화 ─────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  const today = new Date().toISOString().split('T')[0];
-  setVal('f_date', today);
+  setVal('f_date', new Date().toISOString().split('T')[0]);
   setVal('f_week_start', getMondayStr(new Date()));
-  setVal('f_week_type', 'current');
   setVal('f_status', '검토중');
+  updateWeekTypeBadge();
 
-  // DB 연결 대기
   const tryLoad = () => { if (window.DB) loadList(); else setTimeout(tryLoad, 200); };
   tryLoad();
 });

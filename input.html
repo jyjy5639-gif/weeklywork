@@ -6,20 +6,17 @@
 <title>화인파트너스 | 데이터 입력</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<!-- Firebase -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   const firebaseConfig = {
-  apiKey: "AIzaSyD5yGKzMemtfwPE6_hQhmEu9Ea_oIL-N68",
-  authDomain: "fineweeklyinvest.firebaseapp.com",
-  projectId: "fineweeklyinvest",
-  storageBucket: "fineweeklyinvest.firebasestorage.app",
-  messagingSenderId: "941229200117",
-  appId: "1:941229200117:web:83028f4a7950428ede6bbc",
-  measurementId: "G-ZWC69EBLPR"
-};
-
+    apiKey: "AIzaSyD5yGKzMemtfwPE6_hQhmEu9Ea_oIL-N68",
+    authDomain: "fineweeklyinvest.firebaseapp.com",
+    projectId: "fineweeklyinvest",
+    storageBucket: "fineweeklyinvest.firebasestorage.app",
+    messagingSenderId: "941229200117",
+    appId: "1:941229200117:web:83028f4a7950428ede6bbc"
+  };
   const app = initializeApp(firebaseConfig);
   window._db = getFirestore(app);
   window._fbReady = true;
@@ -47,196 +44,161 @@
 
   <div class="input-header">
     <h2 class="input-title">투자검토 항목 입력</h2>
-    <p class="input-desc">각 부서 담당자는 아래 양식을 통해 주간 검토 현황을 입력해 주세요.</p>
+    <p class="input-desc">각 부서 담당자는 아래 양식을 통해 주간 검토 현황을 입력해 주세요. 주간 시작일 기준으로 금주/전주가 자동 구분됩니다.</p>
   </div>
 
-  <div class="input-layout">
+  <!-- ══ 가로 행 입력 폼 ══ -->
+  <div class="row-form-panel">
+    <div class="row-form-scroll">
+      <div class="row-form">
 
-    <!-- ══════════ FORM PANEL ══════════ -->
-    <div class="form-panel" id="formPanel">
-
-      <!-- §1 기본 분류 -->
-      <div class="form-section-title"><span class="form-section-dot"></span>기본 분류</div>
-      <div class="form-grid col3">
-        <div class="form-group">
+        <div class="ri-cell ri-xs">
           <label>부서 <span class="req">*</span></label>
           <select id="f_dept">
             <option value="">선택</option>
-            <option>투자1부</option><option>투자2부</option>
-            <option>투자3부</option><option>관리부</option>
+            <option>투자1부</option>
+            <option>투자2부</option>
+            <option>투자3부</option>
+            <option>관리부</option>
           </select>
         </div>
-        <div class="form-group">
+
+        <div class="ri-cell ri-xs">
           <label>구분 <span class="req">*</span></label>
           <select id="f_category">
             <option value="">선택</option>
-            <option>작성중</option><option>신규</option><option>기존</option>
-            <option>기존★</option><option>관리자산</option>
-            <option>입/출금</option><option>기타</option>
+            <option>작성중</option>
+            <option>신규</option>
+            <option>기존</option>
+            <option>기존★</option>
+            <option>관리자산</option>
+            <option>입/출금</option>
+            <option>기타</option>
           </select>
         </div>
-        <div class="form-group">
+
+        <div class="ri-cell ri-xs">
           <label>업무구분</label>
           <select id="f_worktype">
             <option value="">선택</option>
-            <option value="투">투 (투자부문)</option>
-            <option value="자">자 (자산관리)</option>
-            <option value="업">업 (업무지원)</option>
-            <option value="무">무 (무심사)</option>
-            <option value="부">부 (부동산)</option>
+            <option value="투">투</option>
+            <option value="자">자</option>
+            <option value="업">업</option>
+            <option value="무">무</option>
+            <option value="부">부</option>
           </select>
         </div>
-      </div>
 
-      <!-- §2 주차 -->
-      <div class="form-section-title" style="margin-top:22px"><span class="form-section-dot"></span>해당 주차</div>
-      <div class="form-grid col3">
-        <div class="form-group">
-          <label>주간 시작일 (월요일) <span class="req">*</span></label>
-          <input type="date" id="f_week_start">
+        <div class="ri-cell ri-md">
+          <label>주간 시작일 <span class="req">*</span></label>
+          <input type="date" id="f_week_start" onchange="updateWeekTypeBadge()">
         </div>
-        <div class="form-group">
-          <label>금주 / 전주</label>
-          <select id="f_week_type">
-            <option value="current">금주 실적</option>
-            <option value="prev">전주 실적</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>날짜</label>
-          <input type="date" id="f_date">
-        </div>
-      </div>
 
-      <!-- §3 기업 기본 정보 -->
-      <div class="form-section-title" style="margin-top:22px"><span class="form-section-dot"></span>기업 기본 정보</div>
-      <div class="form-grid col2">
-        <div class="form-group full">
+        <div class="ri-cell ri-lg">
           <label>회사명 / 사업명 <span class="req">*</span></label>
           <input type="text" id="f_company" placeholder="예: 제주반도체">
         </div>
-        <div class="form-group full">
-          <label>업종(상세)</label>
-          <input type="text" id="f_industry" placeholder="예: 저전력 메모리 반도체(LPDDR, MCP 등)를 설계·판매하는 팹리스 기업">
-        </div>
-      </div>
 
-      <!-- §4 투자 조건 -->
-      <div class="form-section-title" style="margin-top:22px"><span class="form-section-dot"></span>투자 형태 및 주요 조건</div>
-      <div class="form-grid col2">
-        <div class="form-group full">
-          <label>투자 형태 및 주요 조건 <span class="tip" title="예: 신규 CB (250억원) / 지분율 약 1.53% / Pre-Value 1조4,800억원 / Coupon 0%, YTP 2%, YTC(한도 30%) 2% / GP Money 5억원">?</span></label>
-          <textarea id="f_invest_type" rows="3" placeholder="예: 신규 CB (250억원) / 지분율 약 1.53%(전환가액 44,000원 기준) / Pre-Value 1조4,800억원 / Coupon 0%, YTP 2%, YTC(한도 30%) 2% / GP Money 5억원(케이클라비스)"></textarea>
+        <div class="ri-cell ri-xl">
+          <label>업종(상세)</label>
+          <input type="text" id="f_industry" placeholder="예: 저전력 메모리 반도체 팹리스">
         </div>
-        <div class="form-group">
+
+        <div class="ri-cell ri-xl">
+          <label>투자 형태 및 주요 조건</label>
+          <input type="text" id="f_invest_type" placeholder="예: 신규 CB 250억 / Pre-Value 1.48조 / Coupon 0%">
+        </div>
+
+        <div class="ri-cell ri-md">
           <label>목표</label>
-          <input type="text" id="f_target" placeholder="예: 29년 장내매각 / IPO">
+          <input type="text" id="f_target" placeholder="예: IPO / 장내매각">
         </div>
-        <div class="form-group">
+
+        <div class="ri-cell ri-md">
           <label>총 규모</label>
-          <input type="text" id="f_total_size" placeholder="예: 250억원, 25M USD">
+          <input type="text" id="f_total_size" placeholder="예: 250억원">
         </div>
-        <div class="form-group">
-          <label>검토금액 <span class="req">*</span></label>
-          <input type="text" id="f_review_amount" placeholder="예: 20억원, -">
+
+        <div class="ri-cell ri-md">
+          <label>검토금액</label>
+          <input type="text" id="f_review_amount" placeholder="예: 20억원">
         </div>
-        <div class="form-group">
+
+        <div class="ri-cell ri-sm">
           <label>진행상황</label>
           <select id="f_status">
             <option value="">선택</option>
-            <option>작성중</option><option>검토중</option><option>심사중</option>
-            <option>투자완료</option><option>협의중</option>
-            <option>보류</option><option>종결</option><option>-</option>
+            <option>작성중</option>
+            <option>검토중</option>
+            <option>심사중</option>
+            <option>투자완료</option>
+            <option>협의중</option>
+            <option>보류</option>
+            <option>종결</option>
+            <option>-</option>
           </select>
         </div>
-      </div>
 
-      <!-- §5 재무 상세 (기존/기존★) -->
-      <div class="form-section-title" style="margin-top:22px" id="secFinance">
-        <span class="form-section-dot accent2"></span>재무 / 밸류에이션 상세
-        <span class="section-optional">(선택)</span>
-      </div>
-      <div class="form-grid col3">
-        <div class="form-group">
-          <label>Pre-Value</label>
-          <input type="text" id="f_pre_value" placeholder="예: 1조4,800억원">
-        </div>
-        <div class="form-group">
-          <label>지분율</label>
-          <input type="text" id="f_equity_ratio" placeholder="예: 약 1.53%">
-        </div>
-        <div class="form-group">
-          <label>Coupon / YTP / YTC</label>
-          <input type="text" id="f_coupon" placeholder="예: 0% / 2% / 2%">
-        </div>
-        <div class="form-group">
-          <label>IRR (목표)</label>
-          <input type="text" id="f_irr" placeholder="예: 15%↑">
-        </div>
-        <div class="form-group">
-          <label>MOIC (목표)</label>
-          <input type="text" id="f_moic" placeholder="예: 2.0x">
-        </div>
-        <div class="form-group">
-          <label>EXIT 방식</label>
-          <input type="text" id="f_exit_method" placeholder="예: IPO, 장내매각, M&A">
-        </div>
-        <div class="form-group">
-          <label>EXIT 예정 시기</label>
-          <input type="text" id="f_exit_year" placeholder="예: 2027년">
-        </div>
-        <div class="form-group">
-          <label>Put/Call 옵션</label>
-          <input type="text" id="f_put_call" placeholder="예: Put 3년 후 / Call 2년 후">
-        </div>
-        <div class="form-group">
-          <label>Tag-along / Drag-along</label>
-          <input type="text" id="f_tag_drag" placeholder="예: Tag-along 보유">
-        </div>
-      </div>
-
-      <!-- §6 기타 -->
-      <div class="form-section-title" style="margin-top:22px"><span class="form-section-dot accent3"></span>비고 / 기타</div>
-      <div class="form-grid col2">
-        <div class="form-group full">
+        <div class="ri-cell ri-lg">
           <label>비고</label>
-          <textarea id="f_note" rows="2" placeholder="추가 메모 사항을 입력하세요"></textarea>
+          <input type="text" id="f_note" placeholder="추가 메모">
         </div>
-      </div>
 
-      <div class="form-actions">
-        <button class="btn-cancel" onclick="resetForm()">초기화</button>
-        <button class="btn-submit" id="btnSubmit" onclick="submitEntry()">저장하기</button>
-      </div>
+        <!-- 숨김 필드 (데이터 호환) -->
+        <input type="hidden" id="f_date">
+        <input type="hidden" id="f_week_type">
+        <input type="hidden" id="f_pre_value">
+        <input type="hidden" id="f_equity_ratio">
+        <input type="hidden" id="f_coupon">
+        <input type="hidden" id="f_irr">
+        <input type="hidden" id="f_moic">
+        <input type="hidden" id="f_exit_method">
+        <input type="hidden" id="f_exit_year">
+        <input type="hidden" id="f_put_call">
+        <input type="hidden" id="f_tag_drag">
+
+        <div class="ri-cell">
+          <label>&nbsp;</label>
+          <div style="display:flex;gap:6px">
+            <button class="btn-cancel" onclick="resetForm()">초기화</button>
+            <button class="btn-submit" id="btnSubmit" onclick="submitEntry()">저장</button>
+          </div>
+        </div>
+
+      </div><!-- /.row-form -->
+    </div><!-- /.row-form-scroll -->
+
+    <div class="row-form-footer">
+      <span id="weekTypeBadge" class="week-type-badge empty">주간 시작일을 선택하세요</span>
       <div id="formMsg" class="form-msg"></div>
     </div>
+  </div><!-- /.row-form-panel -->
 
-    <!-- ══════════ LIST PANEL ══════════ -->
-    <div class="list-panel">
-      <div class="list-panel-header">
-        <span class="list-panel-title">입력된 항목 목록</span>
-        <div style="display:flex;gap:8px;align-items:center">
-          <select id="filterWeek" onchange="renderList()" class="list-filter-sel">
-            <option value="">전체 주차</option>
-          </select>
-          <select id="filterDept" onchange="renderList()" class="list-filter-sel">
-            <option value="">전체 부서</option>
-            <option>투자1부</option><option>투자2부</option>
-            <option>투자3부</option><option>관리부</option>
-          </select>
-          <select id="filterCatList" onchange="renderList()" class="list-filter-sel">
-            <option value="">전체 구분</option>
-            <option>신규</option><option>기존</option><option>기존★</option>
-            <option>관리자산</option><option>입/출금</option><option>기타</option>
-          </select>
-        </div>
-      </div>
-      <div id="entryList" class="entry-list">
-        <div class="entry-empty">Firebase 연결 후 항목이 표시됩니다.</div>
+  <!-- ══ 목록 패널 ══ -->
+  <div class="list-panel-full">
+    <div class="list-panel-header">
+      <span class="list-panel-title">입력된 항목 목록</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="filterWeek" onchange="renderList()" class="list-filter-sel">
+          <option value="">전체 주차</option>
+        </select>
+        <select id="filterDept" onchange="renderList()" class="list-filter-sel">
+          <option value="">전체 부서</option>
+          <option>투자1부</option><option>투자2부</option>
+          <option>투자3부</option><option>관리부</option>
+        </select>
+        <select id="filterCatList" onchange="renderList()" class="list-filter-sel">
+          <option value="">전체 구분</option>
+          <option>신규</option><option>기존</option><option>기존★</option>
+          <option>관리자산</option><option>입/출금</option><option>기타</option>
+        </select>
       </div>
     </div>
-
+    <div id="entryList" class="entry-list">
+      <div class="entry-empty">Firebase 연결 후 항목이 표시됩니다.</div>
+    </div>
   </div>
+
 </main>
 
 <script src="db.js" type="module"></script>
