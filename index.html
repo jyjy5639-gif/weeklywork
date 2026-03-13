@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>화인파트너스 | 주간 업무일지</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy, onSnapshot }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // ── Firebase 설정 ── 배포 전 본인 프로젝트 설정으로 교체하세요 ──
+  const firebaseConfig = {
+  apiKey: "AIzaSyD5yGKzMemtfwPE6_hQhmEu9Ea_oIL-N68",
+  authDomain: "fineweeklyinvest.firebaseapp.com",
+  projectId: "fineweeklyinvest",
+  storageBucket: "fineweeklyinvest.firebasestorage.app",
+  messagingSenderId: "941229200117",
+  appId: "1:941229200117:web:83028f4a7950428ede6bbc",
+  measurementId: "G-ZWC69EBLPR"
+};
+
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+  window._db = db;
+  window._fbReady = true;
+  window.dispatchEvent(new Event('firebase-ready'));
+</script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="nav-left">
+    <span class="logo-mark">FP</span>
+    <span class="logo-text">화인파트너스</span>
+    <span class="nav-divider">|</span>
+    <span class="nav-subtitle">주간 업무일지 & 계획</span>
+  </div>
+  <div class="nav-right">
+    <a href="index.html" class="nav-btn active">대시보드</a>
+    <a href="input.html" class="nav-btn">데이터 입력</a>
+    <span class="db-status" id="dbStatus">● 연결 중...</span>
+    <button class="btn-week-nav" onclick="prevWeek()">&#8249;</button>
+    <span id="currentWeekLabel" class="week-label">—</span>
+    <button class="btn-week-nav" onclick="nextWeek()">&#8250;</button>
+  </div>
+</nav>
+
+<main class="main-container">
+
+  <div class="dashboard-header">
+    <div class="header-block current">
+      <div class="header-tag">금주 실적</div>
+      <div id="headerDateCurrent" class="header-date">—</div>
+    </div>
+    <div class="header-block prev">
+      <div class="header-tag">전주 실적</div>
+      <div id="headerDatePrev" class="header-date">—</div>
+    </div>
+  </div>
+
+  <!-- KPI -->
+  <div class="kpi-row" id="kpiRow">
+    <div class="kpi-card skeleton"></div>
+    <div class="kpi-card skeleton"></div>
+    <div class="kpi-card skeleton"></div>
+    <div class="kpi-card skeleton"></div>
+    <div class="kpi-card skeleton"></div>
+  </div>
+
+  <!-- DEPT TABS -->
+  <div class="dept-tabs" id="deptTabs">
+    <button class="dept-tab active" onclick="filterDept('전체',this)">전체</button>
+    <button class="dept-tab" onclick="filterDept('투자1부',this)">투자1부</button>
+    <button class="dept-tab" onclick="filterDept('투자2부',this)">투자2부</button>
+    <button class="dept-tab" onclick="filterDept('투자3부',this)">투자3부</button>
+    <button class="dept-tab" onclick="filterDept('관리부',this)">관리부</button>
+  </div>
+
+  <!-- CATEGORY TABS (엑셀의 시트 탭 구조 반영) -->
+  <div class="cat-tabs" id="catTabs">
+    <button class="cat-tab active" onclick="filterCat('전체',this)">전체</button>
+    <button class="cat-tab" onclick="filterCat('작성중',this)">작성중</button>
+    <button class="cat-tab" onclick="filterCat('신규',this)">신규</button>
+    <button class="cat-tab" onclick="filterCat('기존',this)">기존</button>
+    <button class="cat-tab star" onclick="filterCat('기존★',this)">기존★</button>
+    <button class="cat-tab" onclick="filterCat('관리자산',this)">관리자산</button>
+    <button class="cat-tab" onclick="filterCat('입/출금',this)">입/출금</button>
+    <button class="cat-tab" onclick="filterCat('기타',this)">기타</button>
+  </div>
+
+  <div class="table-wrapper">
+    <div id="loadingOverlay" class="loading-overlay">
+      <div class="spinner"></div><span>Firebase에서 데이터를 불러오는 중...</span>
+    </div>
+    <table class="main-table" id="mainTable">
+      <thead>
+        <tr>
+          <th rowspan="2" class="th-fix th-dept">부서</th>
+          <th rowspan="2" class="th-fix th-cat">구분</th>
+          <th colspan="6" class="th-group current-group">금주 실적</th>
+          <th colspan="6" class="th-group prev-group">전주 실적</th>
+        </tr>
+        <tr>
+          <th class="current-col">회사명/사업명</th>
+          <th class="current-col">업종(상세)</th>
+          <th class="current-col">투자형태</th>
+          <th class="current-col">목표</th>
+          <th class="current-col">검토금액</th>
+          <th class="current-col">진행상황</th>
+          <th class="prev-col">회사명/사업명</th>
+          <th class="prev-col">업종(상세)</th>
+          <th class="prev-col">투자형태</th>
+          <th class="prev-col">목표</th>
+          <th class="prev-col">검토금액</th>
+          <th class="prev-col">진행상황</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr><td colspan="14" class="empty-row">데이터를 불러오는 중입니다...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footer-bar">
+    <span id="lastUpdated" class="footer-meta">최종 업데이트: —</span>
+    <span class="footer-meta" id="recordCount">총 0건</span>
+    <a href="input.html" class="footer-action-btn">+ 새 항목 입력</a>
+  </div>
+
+</main>
+
+<script src="db.js" type="module"></script>
+<script src="dashboard.js"></script>
+</body>
+</html>
